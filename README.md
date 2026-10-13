@@ -5,7 +5,7 @@ Microservicio de usuarios de RutaLimpia, un sistema de recoleccion de reciclaje 
 ## Estado actual
 
 El proyecto base compila y genera un JAR con Java 21, Spring Boot 4.0.5 y Maven.
-Ya incluye JPA, PostgreSQL, validacion, conexion a usuarios_db, la entidad Usuario con sus roles, UsuarioRepository y los DTO de entrada y respuesta. Todavia no tiene endpoints de usuarios.
+Ya incluye JPA, PostgreSQL, validacion, conexion a usuarios_db, la entidad Usuario con sus roles, UsuarioRepository y los DTO de entrada y respuesta. Ya permite crear usuarios mediante POST /usuarios y guardarlos en PostgreSQL.
 
 Este README define la propuesta de modelo y alcance que usaremos para desarrollar
 el servicio. Los campos y roles elegidos son decisiones de este proyecto;
@@ -62,7 +62,7 @@ que una persona se registre como administrador o conductor.
 
 ## Endpoints previstos para el CRUD
 
-Estos endpoints todavia no estan implementados.
+Por ahora esta implementado POST /usuarios. Los otros endpoints siguen pendientes.
 
 | Metodo | Ruta | Funcion | Respuesta correcta |
 | --- | --- | --- | --- |
@@ -156,5 +156,25 @@ java -jar target/usuarios-ms-0.0.1-SNAPSHOT.jar
 ```
 
 El servicio utiliza el puerto `8080`. PostgreSQL debe estar en ejecucion
-para iniciar la aplicacion. Por ahora no existen endpoints de usuarios;
+para iniciar la aplicacion. El endpoint POST /usuarios ya esta disponible;
 Hibernate crea la tabla usuarios a partir de la entidad Usuario al iniciar.
+
+## Crear un usuario
+
+Endpoint implementado: `POST http://localhost:8080/usuarios`.
+En Postman, usar el encabezado `Content-Type: application/json` y un body raw JSON:
+
+```json
+{
+  "nombre": "Vecino de ejemplo",
+  "correo": "vecino@example.com",
+  "telefono": "912345678"
+}
+```
+
+Devuelve `201 Created` con el ID generado, nombre, correo, telefono y rol `VECINO`.
+El telefono es opcional. El nombre se guarda sin espacios al principio o al final;
+el correo tambien se convierte a minusculas. Nombre o correo vacios devuelven 400.
+
+Por ahora solo esta implementada la creacion. La validacion completa y las
+respuestas para correos duplicados se agregaran en sus etapas correspondientes.
