@@ -4,10 +4,12 @@ import com.duoc.usuarios_ms.dto.UsuarioRequest;
 import com.duoc.usuarios_ms.dto.UsuarioResponse;
 import com.duoc.usuarios_ms.model.Usuario;
 import com.duoc.usuarios_ms.repository.UsuarioRepository;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -50,11 +52,14 @@ public class UsuarioService {
         Usuario usuario = new Usuario();
         usuario.setNombre(datos.getNombre().trim());
         usuario.setCorreo(datos.getCorreo().trim().toLowerCase(Locale.ROOT));
+        if (repository.existsByCorreoIgnoreCase(usuario.getCorreo())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo ya esta registrado");
+        }
         if (datos.getTelefono() != null) {
             usuario.setTelefono(datos.getTelefono().trim());
         }
 
-        Usuario guardado = repository.save(usuario);
+        Usuario guardado = guardarUsuario(usuario);
         return new UsuarioResponse(guardado.getId(), guardado.getNombre(),
                 guardado.getCorreo(), guardado.getTelefono(), guardado.getRol());
     }
@@ -68,15 +73,19 @@ public class UsuarioService {
         }
 
         Usuario usuario = resultado.get();
+        String correo = datos.getCorreo().trim().toLowerCase(Locale.ROOT);
+        if (repository.existsByCorreoIgnoreCaseAndIdNot(correo, id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo ya esta registrado");
+        }
         usuario.setNombre(datos.getNombre().trim());
-        usuario.setCorreo(datos.getCorreo().trim().toLowerCase(Locale.ROOT));
+        usuario.setCorreo(correo);
         if (datos.getTelefono() == null) {
             usuario.setTelefono(null);
         } else {
             usuario.setTelefono(datos.getTelefono().trim());
         }
 
-        Usuario guardado = repository.save(usuario);
+        Usuario guardado = guardarUsuario(usuario);
         return new UsuarioResponse(guardado.getId(), guardado.getNombre(),
                 guardado.getCorreo(), guardado.getTelefono(), guardado.getRol());
     }
@@ -88,6 +97,22 @@ public class UsuarioService {
         }
 
         repository.delete(resultado.get());
+    }
+
+    private Usuario guardarUsuario(Usuario usuario) {
+        try {
+            return repository.save(usuario);
+        } catch (DataIntegrityViolationException error) {
+            // PostgreSQL usa 23505 cuando se repite un valor unico.
+            Throwable causa = error.getMostSpecificCause();
+            if (causa instanceof SQLException) {
+                SQLException errorSql = (SQLException) causa;
+                if ("23505".equals(errorSql.getSQLState())) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "El correo ya esta registrado");
+                }
+            }
+            throw error;
+        }
     }
 
     private void validarDatos(UsuarioRequest datos) {

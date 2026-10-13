@@ -177,7 +177,7 @@ El telefono es opcional. El nombre se guarda sin espacios al principio o al fina
 el correo tambien se convierte a minusculas. Nombre o correo vacios devuelven 400.
 
 Las operaciones CRUD y la validacion de campos estan implementadas. Las
-respuestas para correos duplicados se agregaran en el paso 15.
+respuestas para correos duplicados ya estan implementadas con estado 409.
 
 ## Listar usuarios
 
@@ -227,3 +227,15 @@ POST y PUT usan @Valid con las restricciones de UsuarioRequest:
 - Telefono: opcional, hasta 20 caracteres; puede omitirse o enviarse null.
 
 Se eliminan espacios al principio y al final antes de validar. Los datos invalidos devuelven 400 Bad Request y no se guardan. El manejo uniforme de errores se agregara en el paso 16.
+
+## Correos duplicados
+
+- POST devuelve `409 Conflict` si el correo ya pertenece a un usuario.
+- PUT devuelve `409 Conflict` si intenta usar el correo de otro usuario.
+- PUT permite conservar el correo del propio usuario.
+- Las comparaciones ignoran mayusculas y minusculas; los correos se guardan en minusculas.
+- PostgreSQL mantiene la restriccion UNIQUE de la columna correo.
+- Si dos peticiones intentan guardar el mismo correo al mismo tiempo, la
+  restriccion de PostgreSQL evita el duplicado y la aplicacion devuelve 409.
+
+El formato uniforme de los mensajes de error se agregara en el paso 16.
