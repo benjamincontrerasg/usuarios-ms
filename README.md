@@ -97,7 +97,8 @@ entre entidades que pertenecen a bases de datos de otros microservicios.
 - `service`: operaciones y reglas de usuarios.
 - `repository`: UsuarioRepository usa JpaRepository para guardar, listar, consultar y eliminar usuarios en PostgreSQL.
 - `model`: entidad Usuario y enum Rol.
-- `dto`: UsuarioRequest recibe nombre, correo y telefono; UsuarioResponse devuelve id, nombre, correo, telefono y rol.
+- `dto`: UsuarioRequest recibe nombre, correo y telefono; UsuarioResponse devuelve id, nombre, correo, telefono y rol. RespuestaError define los mensajes de error.
+- `exception`: ManejadorErrores centraliza las excepciones y conserva los estados HTTP.
 
 ## Preparar PostgreSQL y ejecutar
 
@@ -226,7 +227,7 @@ POST y PUT usan @Valid con las restricciones de UsuarioRequest:
 - Correo: obligatorio, formato valido y hasta 254 caracteres.
 - Telefono: opcional, hasta 20 caracteres; puede omitirse o enviarse null.
 
-Se eliminan espacios al principio y al final antes de validar. Los datos invalidos devuelven 400 Bad Request y no se guardan. El manejo uniforme de errores se agregara en el paso 16.
+Se eliminan espacios al principio y al final antes de validar. Los datos invalidos devuelven 400 Bad Request y no se guardan. Los errores usan un formato uniforme definido por ManejadorErrores.
 
 ## Correos duplicados
 
@@ -238,4 +239,27 @@ Se eliminan espacios al principio y al final antes de validar. Los datos invalid
 - Si dos peticiones intentan guardar el mismo correo al mismo tiempo, la
   restriccion de PostgreSQL evita el duplicado y la aplicacion devuelve 409.
 
-El formato uniforme de los mensajes de error se agregara en el paso 16.
+Los mensajes de error usan el formato documentado en la seccion siguiente.
+
+## Formato de errores
+
+ManejadorErrores centraliza las excepciones con `@RestControllerAdvice`.
+Las respuestas de error de los endpoints usan los mismos campos:
+
+```json
+{
+  "estado": 409,
+  "mensaje": "El correo ya esta registrado",
+  "detalles": []
+}
+```
+
+- `estado`: codigo HTTP de la respuesta.
+- `mensaje`: descripcion del problema.
+- `detalles`: errores de validacion por campo; vacio para los otros errores.
+
+Estados principales: 400 para datos invalidos, JSON incorrecto o ID con formato
+invalido; 404 para usuarios inexistentes; 409 para correos duplicados.
+Los errores de metodo HTTP o tipo de contenido conservan sus estados 405 y 415.
+Los errores inesperados devuelven 500 con un mensaje generico. Sus detalles
+tecnicos se registran en los logs del servidor.
