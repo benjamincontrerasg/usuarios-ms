@@ -2,3 +2,7 @@
 DB_URL=jdbc:postgresql://localhost:5432/usuarios_db
 DB_USERNAME=postgres
 DB_PASSWORD=CAMBIAR_POR_TU_CONTRASENA
+
+# Credenciales exclusivas de usuarios_test_db, para las pruebas de integracion
+TEST_DB_USERNAME=usuarios_test_user
+TEST_DB_PASSWORD=CAMBIAR_POR_TU_CONTRASENA_DE_PRUEBAS

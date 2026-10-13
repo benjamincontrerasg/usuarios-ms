@@ -269,11 +269,60 @@ tecnicos se registran en los logs del servidor.
 Ejecutar desde PowerShell en la carpeta del proyecto:
 
 ```powershell
-.\mvnw.cmd test
+.\mvnw.cmd "-Dtest=UsuarioServiceTest,UsuarioRequestTest" test
 ```
 
 UsuarioServiceTest contiene 10 pruebas de creacion, actualizacion, normalizacion, duplicados, ID y rol, campos obligatorios y errores de persistencia. Mockito simula UsuarioRepository.
 
 UsuarioRequestTest contiene 6 pruebas de las validaciones reales de Jakarta Validation: campos obligatorios, formato de correo, longitudes y telefono opcional.
 
-Estas 16 pruebas no requieren PostgreSQL ni cambian sus datos. Las pruebas de persistencia y endpoints se agregaran en el paso 18.
+Estas 16 pruebas no requieren PostgreSQL ni cambian sus datos. Las pruebas de persistencia y endpoints se describen en la seccion siguiente.
+
+## Pruebas de integracion con PostgreSQL
+
+UsuarioIntegrationTest contiene 16 pruebas con MockMvc, el service y el
+repositorio reales. Verifican CRUD, persistencia, validaciones, errores y
+correos duplicados. No necesita Docker; funciona con PostgreSQL local.
+
+Estas pruebas usan usuarios_test_db y usuarios_test_user. Antes y despues
+de cada prueba se comprueban la base y el usuario conectado antes de limpiar
+los registros de prueba. No usan usuarios_db.
+
+### Preparar la base de pruebas una sola vez
+
+Editar sql/crear_base_pruebas.sql y reemplazar la contrasena de ejemplo por
+una propia. Ejecutarlo como postgres:
+
+```powershell
+psql -h localhost -U postgres -d postgres -f sql/crear_base_pruebas.sql
+```
+
+Agregar en application-local.properties el usuario y la misma contrasena:
+
+```properties
+TEST_DB_USERNAME=usuarios_test_user
+TEST_DB_PASSWORD=TU_CONTRASENA_DE_PRUEBAS
+```
+
+Tambien se pueden definir esas dos variables en el entorno. La configuracion
+del perfil integration esta en src/test/resources/application-integration.properties.
+La base y el usuario de pruebas ya creados se conservan entre ejecuciones;
+no repetir el script de creacion si existen.
+
+### Ejecutar las pruebas
+
+Con PostgreSQL iniciado, ejecutar las 32 pruebas:
+
+```powershell
+.\mvnw.cmd test
+```
+
+Para ejecutar solo las 16 pruebas de integracion:
+
+```powershell
+.\mvnw.cmd "-Dtest=UsuarioIntegrationTest" test
+```
+
+MockMvc prueba los endpoints dentro de Spring, sin abrir el puerto 8080.
+Las operaciones se guardan en PostgreSQL y se consultan de nuevo para
+comprobar la persistencia. La limpieza afecta solo a la base de pruebas.
