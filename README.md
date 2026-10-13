@@ -5,7 +5,7 @@ Microservicio de usuarios de RutaLimpia, un sistema de recoleccion de reciclaje 
 ## Estado actual
 
 El proyecto base compila y genera un JAR con Java 21, Spring Boot 4.0.5 y Maven.
-Ya incluye las dependencias de JPA, PostgreSQL y validacion. Todavia no tiene endpoints de usuarios ni conexion a PostgreSQL.
+Ya incluye JPA, PostgreSQL, validacion y la configuracion de conexion a usuarios_db. Todavia no tiene endpoints ni entidades de usuarios.
 
 Este README define la propuesta de modelo y alcance que usaremos para desarrollar
 el servicio. Los campos y roles elegidos son decisiones de este proyecto;
@@ -72,14 +72,15 @@ Estos endpoints todavia no estan implementados.
 | PUT | /usuarios/{id} | Actualizar nombre, correo y telefono. | 200 OK |
 | DELETE | /usuarios/{id} | Eliminar un usuario. | 204 No Content |
 
-## Base de datos prevista
+## Base de datos
 
 - Motor: PostgreSQL.
 - Base de datos: `usuarios_db`.
 - Tabla principal: `usuarios`.
 
-La conexion se configurara en la etapa correspondiente, usando variables
-de entorno para las credenciales.
+La conexion usa DB_URL, DB_USERNAME y DB_PASSWORD. Se pueden definir como
+variables de entorno o en application-local.properties, un archivo local
+ignorado por Git. El archivo de ejemplo no contiene contrasenas reales.
 
 ## Relacion con los otros servicios
 
@@ -98,24 +99,62 @@ entre entidades que pertenecen a bases de datos de otros microservicios.
 - `model`: entidad Usuario y enum Rol.
 - `dto`: datos de entrada y salida de la API.
 
-## Compilar el proyecto base
+## Preparar PostgreSQL y ejecutar
 
 Se requiere un JDK 21 y `JAVA_HOME` apuntando a su carpeta de instalacion.
 El Maven Wrapper permite compilar sin instalar Maven por separado.
 
-En PowerShell, desde la carpeta del proyecto:
+Desde la carpeta del proyecto, copiar la configuracion de ejemplo:
+
+```powershell
+Copy-Item application-local.properties.example application-local.properties
+```
+
+Editar `application-local.properties` y colocar una contrasena propia en
+`DB_PASSWORD`. Este archivo no se sube a GitHub. Si el archivo local ya existe,
+conservarlo y no repetir el comando de copia.
+
+### Opcion 1: PostgreSQL local con Docker
+
+Con Docker Desktop iniciado, ejecutar:
+
+```powershell
+docker compose --env-file application-local.properties up -d
+```
+
+Al iniciar por primera vez, se crea `usuarios_db`. Los datos se conservan en
+un volumen de Docker. El puerto 5432 queda disponible solo en el equipo local.
+
+Comprobar el estado y consultar la base:
+
+```powershell
+docker compose --env-file application-local.properties ps
+docker compose --env-file application-local.properties exec postgres psql -U postgres -d usuarios_db
+```
+
+Dentro de psql, `SELECT current_database();` debe devolver `usuarios_db`.
+Para salir, usar `\q`.
+
+Para detener PostgreSQL conservando los datos:
+
+```powershell
+docker compose --env-file application-local.properties stop
+```
+
+### Opcion 2: PostgreSQL instalado directamente
+
+Crear `usuarios_db` con `sql/crear_base.sql` desde una conexion a la base
+`postgres`, usando psql o pgAdmin. Configurar en el archivo local el usuario,
+la contrasena y la URL de esa instalacion. Usar una sola de estas opciones
+para evitar que dos servidores intenten ocupar el puerto 5432.
+
+### Compilar e iniciar Usuarios
 
 ```powershell
 .\mvnw.cmd clean package
-```
-
-El JAR se genera en `target/usuarios-ms-0.0.1-SNAPSHOT.jar`.
-
-Para ejecutarlo una vez configurada la conexion a PostgreSQL en el paso 5:
-
-```powershell
 java -jar target/usuarios-ms-0.0.1-SNAPSHOT.jar
 ```
 
-El proyecto base utiliza el puerto `8080`. Las instrucciones de PostgreSQL
-y las pruebas con Postman se agregaran cuando esas etapas esten implementadas.
+El servicio utiliza el puerto `8080`. PostgreSQL debe estar en ejecucion
+para iniciar la aplicacion. Por ahora no existen endpoints de usuarios;
+las tablas se crearan cuando agreguemos las entidades en los siguientes pasos.
