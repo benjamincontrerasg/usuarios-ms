@@ -5,7 +5,7 @@ Microservicio de usuarios de RutaLimpia, un sistema de recoleccion de reciclaje 
 ## Estado actual
 
 El proyecto base compila y genera un JAR con Java 21, Spring Boot 4.0.5 y Maven.
-Todavia no tiene endpoints de usuarios ni conexion a PostgreSQL.
+Ya incluye las dependencias de JPA, PostgreSQL y validacion. Todavia no tiene endpoints de usuarios ni conexion a PostgreSQL.
 
 Este README define la propuesta de modelo y alcance que usaremos para desarrollar
 el servicio. Los campos y roles elegidos son decisiones de este proyecto;
@@ -111,7 +111,7 @@ En PowerShell, desde la carpeta del proyecto:
 
 El JAR se genera en `target/usuarios-ms-0.0.1-SNAPSHOT.jar`.
 
-Para ejecutarlo:
+Para ejecutarlo una vez configurada la conexion a PostgreSQL en el paso 5:
 
 ```powershell
 java -jar target/usuarios-ms-0.0.1-SNAPSHOT.jar
