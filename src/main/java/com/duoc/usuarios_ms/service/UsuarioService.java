@@ -4,6 +4,8 @@ import com.duoc.usuarios_ms.dto.UsuarioRequest;
 import com.duoc.usuarios_ms.dto.UsuarioResponse;
 import com.duoc.usuarios_ms.model.Usuario;
 import com.duoc.usuarios_ms.repository.UsuarioRepository;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,18 @@ public class UsuarioService {
 
     public UsuarioService(UsuarioRepository repository) {
         this.repository = repository;
+    }
+
+    public List<UsuarioResponse> listar() {
+        List<Usuario> usuarios = repository.findAll();
+        List<UsuarioResponse> respuestas = new ArrayList<>();
+
+        for (Usuario usuario : usuarios) {
+            respuestas.add(new UsuarioResponse(usuario.getId(), usuario.getNombre(),
+                    usuario.getCorreo(), usuario.getTelefono(), usuario.getRol()));
+        }
+
+        return respuestas;
     }
 
     public UsuarioResponse crear(UsuarioRequest datos) {
