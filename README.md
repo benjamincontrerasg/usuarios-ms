@@ -1,169 +1,239 @@
 # usuarios-ms
 
-Microservicio de usuarios de RutaLimpia, un sistema de recoleccion de reciclaje a domicilio.
+Microservicio de usuarios de RutaLimpia, un sistema de recoleccion de
+reciclaje a domicilio.
 
-## Estado actual
+## Estado del avance
 
-El proyecto base compila y genera un JAR con Java 21, Spring Boot 4.0.5 y Maven.
-Ya incluye JPA, PostgreSQL, validacion, conexion a usuarios_db, la entidad Usuario con sus roles, UsuarioRepository y los DTO de entrada y respuesta. Ya permite crear usuarios mediante POST /usuarios, guardarlos en PostgreSQL, listarlos mediante GET /usuarios y consultarlos por ID mediante GET /usuarios/{id} y actualizarlos mediante PUT /usuarios/{id} y eliminarlos mediante DELETE /usuarios/{id}.
+Esta etapa implementa el CRUD de usuarios con persistencia en PostgreSQL,
+validaciones y errores uniformes. Incluye 16 pruebas unitarias, 16 pruebas
+de integracion y una coleccion Postman con 27 peticiones.
 
-Este README define la propuesta de modelo y alcance que usaremos para desarrollar
-el servicio. Los campos y roles elegidos son decisiones de este proyecto;
-no son requisitos confirmados del enunciado original.
+El proyecto sigue en desarrollo. El registro con contrasena, el inicio de
+sesion y los permisos por rol estan pendientes. Esta guia describe como
+ejecutar y comprobar el avance actual; no corresponde a una entrega final.
 
-## Alcance
+## Tecnologias y requisitos
 
-Primero implementaremos el CRUD de usuarios: crear, listar, consultar por ID,
-actualizar y eliminar, con validaciones y persistencia en PostgreSQL.
+- JDK 21 y `JAVA_HOME` apuntando a su carpeta de instalacion.
+- Spring Boot 4.0.5, Spring Web MVC, Spring Data JPA y Jakarta Validation.
+- PostgreSQL iniciado y accesible desde el equipo.
+- Git para clonar el repositorio.
+- Maven Wrapper incluido: no es necesario instalar Maven por separado.
+- Postman para probar manualmente la API. Node.js solo es necesario si se
+  usa la opcion de Newman.
 
-Despues del CRUD agregaremos registro e inicio de sesion con los commits
-adicionales necesarios. La autenticacion incluira almacenamiento seguro de
-contrasenas y gestion de sesion. Todavia no esta implementada.
+Los comandos siguientes estan pensados para PowerShell en Windows.
+La primera compilacion necesita acceso a internet para descargar dependencias.
 
-## Modelo de Usuario
-
-| Campo | Tipo Java | Regla prevista |
-| --- | --- | --- |
-| id | Long | Clave primaria generada por la base de datos. |
-| nombre | String | Obligatorio, hasta 100 caracteres. |
-| correo | String | Obligatorio, formato de correo y unico, hasta 254 caracteres. |
-| telefono | String | Opcional, hasta 20 caracteres. |
-| rol | Rol (enum) | VECINO, CONDUCTOR o ADMINISTRADOR. |
-
-En la etapa de autenticacion agregaremos `contrasenaHash` para guardar el hash
-BCrypt de la contrasena. La contrasena original y el hash no se devolveran en
-las respuestas de la API.
-
-La direccion de cada retiro pertenece a la solicitud y se gestiona en
-Solicitudes, como ya ocurre en el servicio de nuestro companero.
-
-## Roles propuestos
-
-- VECINO: usuario que puede solicitar retiros de reciclaje.
-- CONDUCTOR: usuario que realiza los retiros asignados a su camion.
-- ADMINISTRADOR: usuario encargado de gestionar usuarios.
-
-Estos roles describen el modelo previsto. Sus permisos se implementaran en
-la etapa de autenticacion. El registro publico creara vecinos; no permitira
-que una persona se registre como administrador o conductor.
-
-## Reglas del CRUD
-
-- El ID se genera en el servidor y no se modifica. UsuarioRequest no recibe ID ni rol; los nuevos usuarios tendran el rol VECINO por defecto.
-- El nombre y el correo no pueden estar vacios.
-- El correo se guarda sin espacios al principio o al final y en minusculas.
-- El correo debe ser unico tanto en la aplicacion como en la base de datos.
-- Las respuestas muestran ID, nombre, correo, telefono y rol.
-- Un ID inexistente devuelve 404.
-- Los datos invalidos devuelven 400 y un correo duplicado devuelve 409.
-- Eliminar un usuario no elimina solicitudes ni datos de otros microservicios.
-  Antes de eliminar usuarios usados en pruebas compartidas, se revisaran sus
-  referencias con el servicio de Solicitudes.
-
-## Endpoints previstos para el CRUD
-
-Estan implementados POST /usuarios, GET /usuarios, GET /usuarios/{id}, PUT /usuarios/{id} y DELETE /usuarios/{id}.
-
-| Metodo | Ruta | Funcion | Respuesta correcta |
-| --- | --- | --- | --- |
-| POST | /usuarios | Crear un usuario. | 201 Created |
-| GET | /usuarios | Listar usuarios. | 200 OK |
-| GET | /usuarios/{id} | Consultar un usuario por ID. | 200 OK |
-| PUT | /usuarios/{id} | Actualizar nombre, correo y telefono. | 200 OK |
-| DELETE | /usuarios/{id} | Eliminar un usuario. | 204 No Content |
-
-## Base de datos
-
-- Motor: PostgreSQL.
-- Base de datos: `usuarios_db`.
-- Tabla principal: `usuarios`.
-
-La conexion usa DB_URL, DB_USERNAME y DB_PASSWORD. Se pueden definir como
-variables de entorno o en application-local.properties, un archivo local
-ignorado por Git. El archivo de ejemplo no contiene contrasenas reales.
-
-## Relacion con los otros servicios
-
-Solicitudes guarda el ID del vecino en el campo `vecinoId`, de tipo `Long`.
-Por eso el ID de Usuario tambien sera `Long`.
-
-Usuarios tendra su propia base de datos. No se copiaran las tablas de Rutas
-ni de Solicitudes dentro de `usuarios_db`. No se crearan relaciones JPA
-entre entidades que pertenecen a bases de datos de otros microservicios.
-
-## Organizacion prevista
-
-- `controller`: endpoints y respuestas HTTP.
-- `service`: operaciones y reglas de usuarios.
-- `repository`: UsuarioRepository usa JpaRepository para guardar, listar, consultar y eliminar usuarios en PostgreSQL.
-- `model`: entidad Usuario y enum Rol.
-- `dto`: UsuarioRequest recibe nombre, correo y telefono; UsuarioResponse devuelve id, nombre, correo, telefono y rol. RespuestaError define los mensajes de error.
-- `exception`: ManejadorErrores centraliza las excepciones y conserva los estados HTTP.
-
-## Preparar PostgreSQL y ejecutar
-
-Se requiere un JDK 21 y `JAVA_HOME` apuntando a su carpeta de instalacion.
-El Maven Wrapper permite compilar sin instalar Maven por separado.
-
-Desde la carpeta del proyecto, copiar la configuracion de ejemplo:
+## Clonar y configurar
 
 ```powershell
-Copy-Item application-local.properties.example application-local.properties
+git clone https://github.com/benjamincontrerasg/usuarios-ms.git
+cd usuarios-ms
 ```
 
-Editar `application-local.properties` y colocar una contrasena propia en
-`DB_PASSWORD`. Este archivo no se sube a GitHub. Si el archivo local ya existe,
-conservarlo y no repetir el comando de copia.
+Si ya se tiene el repositorio, abrir su carpeta en la terminal.
+Comprobar Java y Maven Wrapper:
 
-### Opcion 1: PostgreSQL local con Docker
+```powershell
+java -version
+.\mvnw.cmd -version
+```
 
-Con Docker Desktop iniciado, ejecutar:
+Ambos deben usar Java 21. Si hace falta, configurar `JAVA_HOME` con la ruta
+real del JDK instalado. Ejemplo para esta instalacion:
+
+```powershell
+$env:JAVA_HOME = 'C:\Program Files\Java\jdk-21.0.10'
+& "$env:JAVA_HOME\bin\java.exe" -version
+```
+
+Copiar el ejemplo solo si aun no existe el archivo local:
+
+```powershell
+if (-not (Test-Path application-local.properties)) {
+    Copy-Item application-local.properties.example application-local.properties
+}
+```
+
+Editar `application-local.properties` con la conexion y la contrasena propia:
+
+```properties
+DB_URL=jdbc:postgresql://localhost:5432/usuarios_db
+DB_USERNAME=postgres
+DB_PASSWORD=TU_CONTRASENA
+```
+
+El archivo local esta ignorado por Git. Las variables de entorno con estos
+nombres tambien sirven. El archivo se busca desde el directorio actual;
+ejecutar los comandos de Spring Boot y del JAR desde la raiz del proyecto.
+
+## PostgreSQL instalado directamente
+
+Iniciar PostgreSQL antes de arrancar Usuarios. Si la instalacion utiliza
+un servicio de Windows, iniciar ese servicio. Si utiliza `pg_ctl` y ya tiene
+`PGDATA` configurado con una carpeta inicializada:
+
+```powershell
+pg_ctl -D "$env:PGDATA" status
+pg_ctl -D "$env:PGDATA" -w start
+```
+
+El segundo comando se usa solo si el servidor esta detenido. Comprobar la conexion:
+
+```powershell
+pg_isready -h localhost -p 5432
+psql -h localhost -U postgres -d postgres
+```
+
+Dentro de psql, `\l` muestra las bases disponibles y `\q` permite salir.
+Si `usuarios_db` todavia no existe, crearla una sola vez desde la terminal:
+
+```powershell
+psql -h localhost -U postgres -d postgres -f sql/crear_base.sql
+```
+
+No repetir el script si la base ya existe. Consultar la tabla despues de
+iniciar la aplicacion:
+
+```powershell
+psql -h localhost -U postgres -d usuarios_db
+```
+
+```sql
+SELECT current_database();
+SELECT id, nombre, correo, telefono, rol FROM usuarios ORDER BY id;
+```
+
+Hibernate crea y actualiza la tabla `usuarios` al arrancar, usando
+`spring.jpa.hibernate.ddl-auto=update`. No hace falta crear las tablas a mano.
+
+## PostgreSQL con Docker (opcional)
+
+Como alternativa a la instalacion nativa, con Docker Desktop iniciado y
+la configuracion local lista:
 
 ```powershell
 docker compose --env-file application-local.properties up -d
-```
-
-Al iniciar por primera vez, se crea `usuarios_db`. Los datos se conservan en
-un volumen de Docker. El puerto 5432 queda disponible solo en el equipo local.
-
-Comprobar el estado y consultar la base:
-
-```powershell
 docker compose --env-file application-local.properties ps
-docker compose --env-file application-local.properties exec postgres psql -U postgres -d usuarios_db
 ```
 
-Dentro de psql, `SELECT current_database();` debe devolver `usuarios_db`.
-Para salir, usar `\q`.
-
-Para detener PostgreSQL conservando los datos:
+El primer inicio crea `usuarios_db`; los datos se conservan en un volumen.
+Consultar la base o detener el contenedor conservando los datos:
 
 ```powershell
+docker compose --env-file application-local.properties exec postgres psql -U postgres -d usuarios_db
 docker compose --env-file application-local.properties stop
 ```
 
-### Opcion 2: PostgreSQL instalado directamente
+Usar una sola instalacion en el puerto 5432 a la vez. Docker no es necesario
+para ejecutar el servicio con PostgreSQL nativo.
 
-Crear `usuarios_db` con `sql/crear_base.sql` desde una conexion a la base
-`postgres`, usando psql o pgAdmin. Configurar en el archivo local el usuario,
-la contrasena y la URL de esa instalacion. Usar una sola de estas opciones
-para evitar que dos servidores intenten ocupar el puerto 5432.
+## Ejecutar durante el desarrollo
 
-### Compilar e iniciar Usuarios
+Desde la raiz del proyecto, con PostgreSQL iniciado y la configuracion lista:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+La API queda disponible en `http://localhost:8080/usuarios`.
+La terminal permanece ocupada mientras el servicio esta activo. Abrir otra
+terminal para consultas o pruebas y usar `Ctrl+C` para detener Spring Boot.
+
+Comprobacion rapida en otra terminal:
+
+```powershell
+Invoke-RestMethod -Uri 'http://localhost:8080/usuarios' -Method Get
+```
+
+## Compilar y ejecutar el JAR
+
+Preparar primero la base y las credenciales de pruebas de la seccion siguiente.
+El empaquetado ejecuta las 32 pruebas, incluidas las que usan PostgreSQL:
 
 ```powershell
 .\mvnw.cmd clean package
-java -jar target/usuarios-ms-0.0.1-SNAPSHOT.jar
+& "$env:JAVA_HOME\bin\java.exe" -jar target/usuarios-ms-0.0.1-SNAPSHOT.jar
 ```
 
-El servicio utiliza el puerto `8080`. PostgreSQL debe estar en ejecucion
-para iniciar la aplicacion. El endpoint POST /usuarios ya esta disponible;
-Hibernate crea la tabla usuarios a partir de la entidad Usuario al iniciar.
+Maven debe finalizar con `BUILD SUCCESS`. El JAR se genera dentro de `target`.
+Ejecutarlo es una alternativa a `spring-boot:run`; iniciar solo una instancia
+en el puerto 8080. Detenerla con `Ctrl+C`.
 
-## Crear un usuario
+## Pruebas automatizadas
 
-Endpoint implementado: `POST http://localhost:8080/usuarios`.
-En Postman, usar el encabezado `Content-Type: application/json` y un body raw JSON:
+### Unitarias: no necesitan PostgreSQL
+
+```powershell
+.\mvnw.cmd "-Dtest=UsuarioServiceTest,UsuarioRequestTest" test
+```
+
+Son 10 pruebas de las reglas de UsuarioService con Mockito y 6 pruebas de
+las validaciones reales de UsuarioRequest. No modifican datos en PostgreSQL.
+
+### Preparar la base de integracion una sola vez
+
+Las pruebas de integracion necesitan `usuarios_test_db` y `usuarios_test_user`.
+Editar la contrasena de ejemplo en `sql/crear_base_pruebas.sql` con una propia
+y ejecutar el script como postgres, solo si la base y el usuario no existen:
+
+```powershell
+psql -h localhost -U postgres -d postgres -f sql/crear_base_pruebas.sql
+```
+
+Guardar esas credenciales en `application-local.properties`:
+
+```properties
+TEST_DB_USERNAME=usuarios_test_user
+TEST_DB_PASSWORD=TU_CONTRASENA_DE_PRUEBAS
+```
+
+Conservar las contrasenas reales solo en la configuracion local; antes de
+subir cambios, dejar la contrasena de ejemplo en el script SQL.
+
+### Ejecutar todas las pruebas
+
+Con PostgreSQL iniciado:
+
+```powershell
+.\mvnw.cmd test
+```
+
+Ejecuta 32 pruebas. Para ejecutar solo las 16 de integracion:
+
+```powershell
+.\mvnw.cmd "-Dtest=UsuarioIntegrationTest" test
+```
+
+Las pruebas de integracion usan MockMvc, el service y el repositorio reales,
+con el perfil de `src/test/resources/application-integration.properties`.
+Comprueban la base y el usuario conectado antes de limpiar los registros de
+prueba. Usan exclusivamente `usuarios_test_db` y no abren el puerto 8080.
+
+## Probar con Postman
+
+Con Spring Boot iniciado, importar
+[`postman/Usuarios.postman_collection.json`](postman/Usuarios.postman_collection.json)
+y ejecutar la coleccion completa en su orden original.
+
+Incluye CRUD, validaciones, duplicados y errores HTTP. Genera correos unicos,
+guarda los IDs recibidos y elimina los dos usuarios que creo al terminar.
+Las instrucciones de uso y la opcion de Newman estan en
+[`postman/README.md`](postman/README.md).
+
+## Endpoints y ejemplos
+
+| Metodo | Ruta | Respuesta correcta |
+| --- | --- | --- |
+| POST | `/usuarios` | 201 Created con el usuario creado. |
+| GET | `/usuarios` | 200 OK con una lista; `[]` si no hay usuarios. |
+| GET | `/usuarios/{id}` | 200 OK con el usuario. |
+| PUT | `/usuarios/{id}` | 200 OK con el usuario actualizado. |
+| DELETE | `/usuarios/{id}` | 204 No Content sin cuerpo. |
+
+En POST y PUT, enviar `Content-Type: application/json` y un body raw JSON:
 
 ```json
 {
@@ -173,78 +243,30 @@ En Postman, usar el encabezado `Content-Type: application/json` y un body raw JS
 }
 ```
 
-Devuelve `201 Created` con el ID generado, nombre, correo, telefono y rol `VECINO`.
-El telefono es opcional. El nombre se guarda sin espacios al principio o al final;
-el correo tambien se convierte a minusculas. Nombre o correo vacios devuelven 400.
+Las respuestas de creacion, consulta y actualizacion incluyen `id`, `nombre`,
+`correo`, `telefono` y `rol`. Usar el ID generado en las rutas de consulta,
+actualizacion y eliminacion.
 
-Las operaciones CRUD y la validacion de campos estan implementadas. Las
-respuestas para correos duplicados ya estan implementadas con estado 409.
+## Campos y reglas implementadas
 
-## Listar usuarios
+| Campo | Regla |
+| --- | --- |
+| id | Long generado por PostgreSQL; se conserva al actualizar. |
+| nombre | Obligatorio, hasta 100 caracteres. |
+| correo | Obligatorio, formato valido, unico y hasta 254 caracteres. |
+| telefono | Opcional, hasta 20 caracteres. |
+| rol | VECINO, CONDUCTOR o ADMINISTRADOR; POST crea VECINO. |
 
-En Postman, enviar GET a http://localhost:8080/usuarios. Devuelve 200 OK con una lista JSON de usuarios (id, nombre, correo, telefono y rol). Si no hay usuarios, devuelve una lista vacia: [].
+UsuarioRequest recibe nombre, correo y telefono. El CRUD no permite elegir
+el ID ni cambiar el rol. Se eliminan espacios exteriores de los campos y
+el correo se guarda en minusculas. Las comprobaciones de duplicados ignoran
+mayusculas y minusculas; PostgreSQL tambien tiene una restriccion UNIQUE.
 
-## Consultar un usuario por ID
+PUT permite conservar el correo propio y rechaza el de otro usuario. Si
+se omite el telefono o se envia null, se elimina el telefono anterior.
+Los roles son decisiones del proyecto; todavia no tienen permisos implementados.
 
-En Postman, enviar GET a http://localhost:8080/usuarios/{id}, reemplazando {id} por el ID real de un usuario creado. Devuelve 200 OK con el usuario o 404 Not Found si no existe.
-
-## Actualizar un usuario
-
-En Postman, enviar `PUT http://localhost:8080/usuarios/{id}` con el ID real
-del usuario y `Content-Type: application/json`.
-
-```json
-{
-  "nombre": "Vecino actualizado",
-  "correo": "vecino.actualizado@example.com",
-  "telefono": "987654321"
-}
-```
-
-Devuelve `200 OK` con el usuario actualizado. El ID y el rol se conservan.
-Nombre y correo son obligatorios; se normalizan igual que al crear usuarios.
-Si se omite el telefono o se envia null, se borra el telefono anterior.
-Un ID inexistente devuelve `404 Not Found`. Nombre o correo vacios devuelven 400.
-
-## Eliminar un usuario
-
-En Postman, enviar `DELETE http://localhost:8080/usuarios/{id}`, reemplazando
-`{id}` por el ID real del usuario. No requiere body.
-
-Devuelve `204 No Content` y elimina el registro de la tabla usuarios.
-Si el ID no existe, devuelve `404 Not Found`. Despues de eliminar un usuario,
-consultarlo por ID tambien devuelve 404.
-
-Esta operacion no elimina solicitudes ni datos de los otros microservicios.
-Antes de eliminar usuarios usados en pruebas compartidas, revisar sus referencias
-con el servicio de Solicitudes.
-
-## Validaciones de entrada
-
-POST y PUT usan @Valid con las restricciones de UsuarioRequest:
-
-- Nombre: obligatorio, hasta 100 caracteres.
-- Correo: obligatorio, formato valido y hasta 254 caracteres.
-- Telefono: opcional, hasta 20 caracteres; puede omitirse o enviarse null.
-
-Se eliminan espacios al principio y al final antes de validar. Los datos invalidos devuelven 400 Bad Request y no se guardan. Los errores usan un formato uniforme definido por ManejadorErrores.
-
-## Correos duplicados
-
-- POST devuelve `409 Conflict` si el correo ya pertenece a un usuario.
-- PUT devuelve `409 Conflict` si intenta usar el correo de otro usuario.
-- PUT permite conservar el correo del propio usuario.
-- Las comparaciones ignoran mayusculas y minusculas; los correos se guardan en minusculas.
-- PostgreSQL mantiene la restriccion UNIQUE de la columna correo.
-- Si dos peticiones intentan guardar el mismo correo al mismo tiempo, la
-  restriccion de PostgreSQL evita el duplicado y la aplicacion devuelve 409.
-
-Los mensajes de error usan el formato documentado en la seccion siguiente.
-
-## Formato de errores
-
-ManejadorErrores centraliza las excepciones con `@RestControllerAdvice`.
-Las respuestas de error de los endpoints usan los mismos campos:
+## Errores de la API
 
 ```json
 {
@@ -254,86 +276,54 @@ Las respuestas de error de los endpoints usan los mismos campos:
 }
 ```
 
-- `estado`: codigo HTTP de la respuesta.
-- `mensaje`: descripcion del problema.
-- `detalles`: errores de validacion por campo; vacio para los otros errores.
+| Estado | Motivo |
+| --- | --- |
+| 400 | Datos invalidos, JSON mal formado o ID no numerico. |
+| 404 | Usuario o recurso inexistente. |
+| 409 | Correo duplicado al crear o actualizar. |
+| 405 | Metodo HTTP no permitido. |
+| 415 | Tipo de contenido incorrecto. |
+| 500 | Error inesperado; detalles tecnicos registrados en los logs. |
 
-Estados principales: 400 para datos invalidos, JSON incorrecto o ID con formato
-invalido; 404 para usuarios inexistentes; 409 para correos duplicados.
-Los errores de metodo HTTP o tipo de contenido conservan sus estados 405 y 415.
-Los errores inesperados devuelven 500 con un mensaje generico. Sus detalles
-tecnicos se registran en los logs del servidor.
+`detalles` contiene mensajes por campo en los errores de validacion.
+ManejadorErrores centraliza este formato con `@RestControllerAdvice`.
 
-## Pruebas unitarias
+## Organizacion del codigo
 
-Ejecutar desde PowerShell en la carpeta del proyecto:
+- `controller`: endpoints REST.
+- `service`: reglas y operaciones de usuarios.
+- `repository`: acceso a PostgreSQL con JpaRepository.
+- `model`: entidad Usuario y enum Rol.
+- `dto`: UsuarioRequest, UsuarioResponse y RespuestaError.
+- `exception`: manejo centralizado de errores.
+- `src/test`: pruebas unitarias y de integracion.
+- `sql`: creacion de las bases de desarrollo y pruebas.
+- `postman`: coleccion y guia de pruebas HTTP.
 
-```powershell
-.\mvnw.cmd "-Dtest=UsuarioServiceTest,UsuarioRequestTest" test
-```
+## Relacion con Solicitudes y Rutas
 
-UsuarioServiceTest contiene 10 pruebas de creacion, actualizacion, normalizacion, duplicados, ID y rol, campos obligatorios y errores de persistencia. Mockito simula UsuarioRepository.
+Solicitudes guarda `vecinoId` como Long y Usuarios usa Long para su ID.
+La direccion de cada retiro pertenece a Solicitudes. Usuarios mantiene su
+propia base: no copia tablas de los otros servicios ni crea relaciones JPA
+entre bases diferentes.
 
-UsuarioRequestTest contiene 6 pruebas de las validaciones reales de Jakarta Validation: campos obligatorios, formato de correo, longitudes y telefono opcional.
+Actualmente no hay llamadas HTTP entre Usuarios y los otros servicios.
+Eliminar un usuario no elimina ni comprueba sus solicitudes; antes de borrar
+datos compartidos, revisar sus referencias con el servicio de Solicitudes.
 
-Estas 16 pruebas no requieren PostgreSQL ni cambian sus datos. Las pruebas de persistencia y endpoints se describen en la seccion siguiente.
+## Problemas habituales al ejecutar
 
-## Pruebas de integracion con PostgreSQL
+| Problema | Que revisar |
+| --- | --- |
+| JAVA_HOME incorrecto o compilacion con otra version | La ruta del JDK 21 y la salida de `.\mvnw.cmd -version`. |
+| Conexion rechazada a PostgreSQL | Servidor iniciado, puerto 5432 y DB_URL. |
+| Error de contrasena o base inexistente | DB_USERNAME, DB_PASSWORD y creacion de usuarios_db. |
+| Fallan las pruebas de integracion | usuarios_test_db, usuarios_test_user y las dos variables TEST_DB. |
+| Puerto 8080 ocupado | Detener la instancia anterior antes de iniciar otra. |
+| No se carga la configuracion local | Ejecutar desde la raiz donde esta application-local.properties. |
 
-UsuarioIntegrationTest contiene 16 pruebas con MockMvc, el service y el
-repositorio reales. Verifican CRUD, persistencia, validaciones, errores y
-correos duplicados. No necesita Docker; funciona con PostgreSQL local.
+## Trabajo pendiente
 
-Estas pruebas usan usuarios_test_db y usuarios_test_user. Antes y despues
-de cada prueba se comprueban la base y el usuario conectado antes de limpiar
-los registros de prueba. No usan usuarios_db.
-
-### Preparar la base de pruebas una sola vez
-
-Editar sql/crear_base_pruebas.sql y reemplazar la contrasena de ejemplo por
-una propia. Ejecutarlo como postgres:
-
-```powershell
-psql -h localhost -U postgres -d postgres -f sql/crear_base_pruebas.sql
-```
-
-Agregar en application-local.properties el usuario y la misma contrasena:
-
-```properties
-TEST_DB_USERNAME=usuarios_test_user
-TEST_DB_PASSWORD=TU_CONTRASENA_DE_PRUEBAS
-```
-
-Tambien se pueden definir esas dos variables en el entorno. La configuracion
-del perfil integration esta en src/test/resources/application-integration.properties.
-La base y el usuario de pruebas ya creados se conservan entre ejecuciones;
-no repetir el script de creacion si existen.
-
-### Ejecutar las pruebas
-
-Con PostgreSQL iniciado, ejecutar las 32 pruebas:
-
-```powershell
-.\mvnw.cmd test
-```
-
-Para ejecutar solo las 16 pruebas de integracion:
-
-```powershell
-.\mvnw.cmd "-Dtest=UsuarioIntegrationTest" test
-```
-
-MockMvc prueba los endpoints dentro de Spring, sin abrir el puerto 8080.
-Las operaciones se guardan en PostgreSQL y se consultan de nuevo para
-comprobar la persistencia. La limpieza afecta solo a la base de pruebas.
-## Coleccion Postman
-
-El archivo `postman/Usuarios.postman_collection.json` contiene 27 peticiones
-con comprobaciones automaticas para CRUD, validaciones, duplicados y errores
-400, 404, 409, 405 y 415. Genera correos unicos, guarda los IDs recibidos y
-al terminar elimina los dos usuarios que creo.
-
-Con PostgreSQL y el servicio iniciados, importar el archivo en Postman y
-usar Run collection con todas las peticiones en su orden original.
-La variable base_url apunta a http://localhost:8080. Las instrucciones
-completas y la opcion de ejecutar con Newman estan en [postman/README.md](postman/README.md).
+Continuar con registro e inicio de sesion, almacenamiento seguro de
+contrasenas y permisos por rol. La coordinacion funcional con los otros
+microservicios se revisara en los pasos posteriores del proyecto.
