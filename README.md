@@ -263,3 +263,17 @@ invalido; 404 para usuarios inexistentes; 409 para correos duplicados.
 Los errores de metodo HTTP o tipo de contenido conservan sus estados 405 y 415.
 Los errores inesperados devuelven 500 con un mensaje generico. Sus detalles
 tecnicos se registran en los logs del servidor.
+
+## Pruebas unitarias
+
+Ejecutar desde PowerShell en la carpeta del proyecto:
+
+```powershell
+.\mvnw.cmd test
+```
+
+UsuarioServiceTest contiene 10 pruebas de creacion, actualizacion, normalizacion, duplicados, ID y rol, campos obligatorios y errores de persistencia. Mockito simula UsuarioRepository.
+
+UsuarioRequestTest contiene 6 pruebas de las validaciones reales de Jakarta Validation: campos obligatorios, formato de correo, longitudes y telefono opcional.
+
+Estas 16 pruebas no requieren PostgreSQL ni cambian sus datos. Las pruebas de persistencia y endpoints se agregaran en el paso 18.
