@@ -5,7 +5,7 @@ Microservicio de usuarios de RutaLimpia, un sistema de recoleccion de reciclaje 
 ## Estado actual
 
 El proyecto base compila y genera un JAR con Java 21, Spring Boot 4.0.5 y Maven.
-Ya incluye JPA, PostgreSQL, validacion, conexion a usuarios_db, la entidad Usuario con sus roles y UsuarioRepository. Todavia no tiene endpoints de usuarios.
+Ya incluye JPA, PostgreSQL, validacion, conexion a usuarios_db, la entidad Usuario con sus roles, UsuarioRepository y los DTO de entrada y respuesta. Todavia no tiene endpoints de usuarios.
 
 Este README define la propuesta de modelo y alcance que usaremos para desarrollar
 el servicio. Los campos y roles elegidos son decisiones de este proyecto;
@@ -49,7 +49,7 @@ que una persona se registre como administrador o conductor.
 
 ## Reglas del CRUD
 
-- El ID se genera en el servidor y no se modifica.
+- El ID se genera en el servidor y no se modifica. UsuarioRequest no recibe ID ni rol; los nuevos usuarios tendran el rol VECINO por defecto.
 - El nombre y el correo no pueden estar vacios.
 - El correo se guarda sin espacios al principio o al final y en minusculas.
 - El correo debe ser unico tanto en la aplicacion como en la base de datos.
@@ -97,7 +97,7 @@ entre entidades que pertenecen a bases de datos de otros microservicios.
 - `service`: operaciones y reglas de usuarios.
 - `repository`: UsuarioRepository usa JpaRepository para guardar, listar, consultar y eliminar usuarios en PostgreSQL.
 - `model`: entidad Usuario y enum Rol.
-- `dto`: datos de entrada y salida de la API.
+- `dto`: UsuarioRequest recibe nombre, correo y telefono; UsuarioResponse devuelve id, nombre, correo, telefono y rol.
 
 ## Preparar PostgreSQL y ejecutar
 
