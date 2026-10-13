@@ -176,8 +176,8 @@ Devuelve `201 Created` con el ID generado, nombre, correo, telefono y rol `VECIN
 El telefono es opcional. El nombre se guarda sin espacios al principio o al final;
 el correo tambien se convierte a minusculas. Nombre o correo vacios devuelven 400.
 
-Las operaciones CRUD estan implementadas. La validacion completa y las
-respuestas para correos duplicados se agregaran en sus etapas correspondientes.
+Las operaciones CRUD y la validacion de campos estan implementadas. Las
+respuestas para correos duplicados se agregaran en el paso 15.
 
 ## Listar usuarios
 
@@ -217,3 +217,13 @@ consultarlo por ID tambien devuelve 404.
 Esta operacion no elimina solicitudes ni datos de los otros microservicios.
 Antes de eliminar usuarios usados en pruebas compartidas, revisar sus referencias
 con el servicio de Solicitudes.
+
+## Validaciones de entrada
+
+POST y PUT usan @Valid con las restricciones de UsuarioRequest:
+
+- Nombre: obligatorio, hasta 100 caracteres.
+- Correo: obligatorio, formato valido y hasta 254 caracteres.
+- Telefono: opcional, hasta 20 caracteres; puede omitirse o enviarse null.
+
+Se eliminan espacios al principio y al final antes de validar. Los datos invalidos devuelven 400 Bad Request y no se guardan. El manejo uniforme de errores se agregara en el paso 16.

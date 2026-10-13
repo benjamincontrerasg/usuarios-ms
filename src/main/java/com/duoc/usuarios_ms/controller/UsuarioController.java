@@ -3,6 +3,7 @@ package com.duoc.usuarios_ms.controller;
 import com.duoc.usuarios_ms.dto.UsuarioRequest;
 import com.duoc.usuarios_ms.dto.UsuarioResponse;
 import com.duoc.usuarios_ms.service.UsuarioService;
+import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,13 +37,13 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioResponse> crear(@RequestBody UsuarioRequest datos) {
+    public ResponseEntity<UsuarioResponse> crear(@Valid @RequestBody UsuarioRequest datos) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.crear(datos));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponse> actualizar(@PathVariable("id") Long id,
-            @RequestBody UsuarioRequest datos) {
+            @Valid @RequestBody UsuarioRequest datos) {
         return ResponseEntity.ok(service.actualizar(id, datos));
     }
 
