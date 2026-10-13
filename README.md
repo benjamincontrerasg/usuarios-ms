@@ -5,7 +5,7 @@ Microservicio de usuarios de RutaLimpia, un sistema de recoleccion de reciclaje 
 ## Estado actual
 
 El proyecto base compila y genera un JAR con Java 21, Spring Boot 4.0.5 y Maven.
-Ya incluye JPA, PostgreSQL, validacion y la configuracion de conexion a usuarios_db. Todavia no tiene endpoints ni entidades de usuarios.
+Ya incluye JPA, PostgreSQL, validacion, conexion a usuarios_db y la entidad Usuario con sus roles. Todavia no tiene endpoints de usuarios.
 
 Este README define la propuesta de modelo y alcance que usaremos para desarrollar
 el servicio. Los campos y roles elegidos son decisiones de este proyecto;
@@ -157,4 +157,4 @@ java -jar target/usuarios-ms-0.0.1-SNAPSHOT.jar
 
 El servicio utiliza el puerto `8080`. PostgreSQL debe estar en ejecucion
 para iniciar la aplicacion. Por ahora no existen endpoints de usuarios;
-las tablas se crearan cuando agreguemos las entidades en los siguientes pasos.
+Hibernate crea la tabla usuarios a partir de la entidad Usuario al iniciar.
