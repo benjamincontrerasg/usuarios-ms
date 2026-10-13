@@ -81,6 +81,15 @@ public class UsuarioService {
                 guardado.getCorreo(), guardado.getTelefono(), guardado.getRol());
     }
 
+    public void eliminar(Long id) {
+        Optional<Usuario> resultado = repository.findById(id);
+        if (resultado.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+        }
+
+        repository.delete(resultado.get());
+    }
+
     private void validarDatos(UsuarioRequest datos) {
         if (datos.getNombre() == null || datos.getNombre().trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre es obligatorio");
