@@ -326,3 +326,14 @@ Para ejecutar solo las 16 pruebas de integracion:
 MockMvc prueba los endpoints dentro de Spring, sin abrir el puerto 8080.
 Las operaciones se guardan en PostgreSQL y se consultan de nuevo para
 comprobar la persistencia. La limpieza afecta solo a la base de pruebas.
+## Coleccion Postman
+
+El archivo `postman/Usuarios.postman_collection.json` contiene 27 peticiones
+con comprobaciones automaticas para CRUD, validaciones, duplicados y errores
+400, 404, 409, 405 y 415. Genera correos unicos, guarda los IDs recibidos y
+al terminar elimina los dos usuarios que creo.
+
+Con PostgreSQL y el servicio iniciados, importar el archivo en Postman y
+usar Run collection con todas las peticiones en su orden original.
+La variable base_url apunta a http://localhost:8080. Las instrucciones
+completas y la opcion de ejecutar con Newman estan en [postman/README.md](postman/README.md).

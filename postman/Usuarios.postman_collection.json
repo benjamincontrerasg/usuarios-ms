@@ -1,0 +1,989 @@
+{
+  "info": {
+    "name": "RutaLimpia - Usuarios",
+    "description": "CRUD y errores de Usuarios. Ejecutar toda la coleccion en orden, con PostgreSQL y Spring Boot iniciados. Crea dos usuarios con correos unicos y al terminar elimina solo esos IDs. Si se interrumpe, completar la carpeta 04 Limpieza antes de comenzar otra ejecucion. No contiene contrasenas ni datos reales.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "usuario_a_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "usuario_b_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "correo_a",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "correo_b",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "correo_actualizado",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "correo_mayusculas",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 Crear y consultar",
+      "item": [
+        {
+          "name": "01 Crear usuario A y guardar ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \" Vecino Postman A \",\n  \"correo\": \" {{correo_a}} \",\n  \"telefono\": \" 912345678 \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const corrida = pm.variables.replaceIn(\"{{$guid}}\");",
+                  "pm.collectionVariables.set(\"correo_a\", \"postman.a.\" + corrida + \"@example.com\");",
+                  "pm.collectionVariables.set(\"correo_b\", \"postman.b.\" + corrida + \"@example.com\");",
+                  "pm.collectionVariables.set(\"correo_actualizado\", \"postman.actualizado.\" + corrida + \"@example.com\");",
+                  "pm.collectionVariables.set(\"usuario_a_id\", \"\");",
+                  "pm.collectionVariables.set(\"usuario_b_id\", \"\");",
+                  "pm.collectionVariables.set(\"correo_mayusculas\", pm.collectionVariables.get(\"correo_a\").toUpperCase());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "const usuario = pm.response.json();",
+                  "pm.test(\"Datos del usuario creado\", function () {",
+                  "    pm.expect(usuario.id).to.be.a(\"number\").and.above(0);",
+                  "    pm.expect(usuario.nombre).to.eql(\"Vecino Postman A\");",
+                  "    pm.expect(usuario.correo).to.eql(pm.collectionVariables.get(\"correo_a\"));",
+                  "    pm.expect(usuario.telefono).to.eql(\"912345678\");",
+                  "    pm.expect(usuario.rol).to.eql(\"VECINO\");",
+                  "});",
+                  "if (pm.response.code === 201 && Number.isInteger(usuario.id) && usuario.id > 0) {",
+                  "    pm.collectionVariables.set(\"usuario_a_id\", String(usuario.id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Crear usuario B sin telefono",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vecino Postman B\",\n  \"correo\": \"{{correo_b}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "const usuario = pm.response.json();",
+                  "pm.test(\"Datos del usuario creado\", function () {",
+                  "    pm.expect(usuario.id).to.be.a(\"number\").and.above(0);",
+                  "    pm.expect(usuario.nombre).to.eql(\"Vecino Postman B\");",
+                  "    pm.expect(usuario.correo).to.eql(pm.collectionVariables.get(\"correo_b\"));",
+                  "    pm.expect(usuario.telefono).to.eql(null);",
+                  "    pm.expect(usuario.rol).to.eql(\"VECINO\");",
+                  "});",
+                  "if (pm.response.code === 201 && Number.isInteger(usuario.id) && usuario.id > 0) {",
+                  "    pm.collectionVariables.set(\"usuario_b_id\", String(usuario.id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Listar y encontrar ambos usuarios",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/usuarios"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "const usuarios = pm.response.json();",
+                  "pm.test(\"Lista contiene los usuarios creados\", function () {",
+                  "    pm.expect(usuarios).to.be.an(\"array\");",
+                  "    const ids = usuarios.map(function (usuario) { return String(usuario.id); });",
+                  "    pm.expect(ids).to.include(pm.collectionVariables.get(\"usuario_a_id\"));",
+                  "    pm.expect(ids).to.include(pm.collectionVariables.get(\"usuario_b_id\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Consultar usuario A",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/usuarios/{{usuario_a_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "const usuario = pm.response.json();",
+                  "pm.test(\"Consulta recupera el usuario creado\", function () {",
+                  "    pm.expect(String(usuario.id)).to.eql(pm.collectionVariables.get(\"usuario_a_id\"));",
+                  "    pm.expect(usuario.correo).to.eql(pm.collectionVariables.get(\"correo_a\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 Casos de error",
+      "item": [
+        {
+          "name": "05 Nombre vacio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \" \",\n  \"correo\": \"{{correo_actualizado}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Datos de entrada invalidos\"); });",
+                  "pm.test(\"Detalle de nombre\", function () { pm.expect(error.detalles.some(function (detalle) { return detalle.startsWith(\"nombre: \"); })).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 Correo invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vecino\",\n  \"correo\": \"sin-arroba\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Datos de entrada invalidos\"); });",
+                  "pm.test(\"Detalle de correo\", function () { pm.expect(error.detalles.some(function (detalle) { return detalle.startsWith(\"correo: \"); })).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 Campos obligatorios ausentes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Datos de entrada invalidos\"); });",
+                  "pm.test(\"Detalle de nombre\", function () { pm.expect(error.detalles.some(function (detalle) { return detalle.startsWith(\"nombre: \"); })).to.eql(true); });",
+                  "pm.test(\"Detalle de correo\", function () { pm.expect(error.detalles.some(function (detalle) { return detalle.startsWith(\"correo: \"); })).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 Nombre demasiado largo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\",\n  \"correo\": \"{{correo_actualizado}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Datos de entrada invalidos\"); });",
+                  "pm.test(\"Detalle de nombre\", function () { pm.expect(error.detalles.some(function (detalle) { return detalle.startsWith(\"nombre: \"); })).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 Telefono demasiado largo en PUT",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios/{{usuario_a_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vecino Postman A\",\n  \"correo\": \"{{correo_a}}\",\n  \"telefono\": \"111111111111111111111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Datos de entrada invalidos\"); });",
+                  "pm.test(\"Detalle de telefono\", function () { pm.expect(error.detalles.some(function (detalle) { return detalle.startsWith(\"telefono: \"); })).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10 Correo duplicado con mayusculas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Duplicado\",\n  \"correo\": \" {{correo_mayusculas}} \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 409\", function () { pm.response.to.have.status(409); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"El correo ya esta registrado\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 Actualizar con el correo de otro usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios/{{usuario_b_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Otro nombre\",\n  \"correo\": \"{{correo_a}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 409\", function () { pm.response.to.have.status(409); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"El correo ya esta registrado\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 Comprobar que PUT rechazado no cambio usuario B",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/usuarios/{{usuario_b_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "const usuario = pm.response.json();",
+                  "pm.test(\"Usuario B conserva sus datos\", function () {",
+                  "    pm.expect(usuario.nombre).to.eql(\"Vecino Postman B\");",
+                  "    pm.expect(usuario.correo).to.eql(pm.collectionVariables.get(\"correo_b\"));",
+                  "    pm.expect(usuario.telefono).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13 JSON mal formado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "{",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"El cuerpo debe contener un JSON valido con los campos esperados\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "14 ID no numerico",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/usuarios/no-numero"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"El parametro de la solicitud tiene un formato invalido\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "15 Consultar ID inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/usuarios/-1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Usuario no encontrado\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "16 Actualizar ID inexistente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios/-1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vecino Postman A\",\n  \"correo\": \"{{correo_a}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Usuario no encontrado\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "17 Eliminar ID inexistente",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/usuarios/-1"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Usuario no encontrado\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "18 Metodo no permitido",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{base_url}}/usuarios/{{usuario_a_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 405\", function () { pm.response.to.have.status(405); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Metodo HTTP no permitido\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "19 Tipo de contenido incorrecto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              }
+            ],
+            "url": "{{base_url}}/usuarios",
+            "body": {
+              "mode": "raw",
+              "raw": "texto",
+              "options": {
+                "raw": {
+                  "language": "text"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 415\", function () { pm.response.to.have.status(415); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"El tipo de contenido no es compatible\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Actualizar",
+      "item": [
+        {
+          "name": "20 Actualizar usuario A",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios/{{usuario_a_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vecino Postman actualizado\",\n  \"correo\": \"{{correo_actualizado}}\",\n  \"telefono\": \"987654321\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "const usuario = pm.response.json();",
+                  "pm.test(\"Actualizacion conserva ID y rol\", function () {",
+                  "    pm.expect(String(usuario.id)).to.eql(pm.collectionVariables.get(\"usuario_a_id\"));",
+                  "    pm.expect(usuario.rol).to.eql(\"VECINO\");",
+                  "    pm.expect(usuario.nombre).to.eql(\"Vecino Postman actualizado\");",
+                  "    pm.expect(usuario.correo).to.eql(pm.collectionVariables.get(\"correo_actualizado\"));",
+                  "    pm.expect(usuario.telefono).to.eql(\"987654321\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "21 Consultar los cambios guardados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/usuarios/{{usuario_a_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "const usuario = pm.response.json();",
+                  "pm.test(\"Actualizacion conserva ID y rol\", function () {",
+                  "    pm.expect(String(usuario.id)).to.eql(pm.collectionVariables.get(\"usuario_a_id\"));",
+                  "    pm.expect(usuario.rol).to.eql(\"VECINO\");",
+                  "    pm.expect(usuario.nombre).to.eql(\"Vecino Postman actualizado\");",
+                  "    pm.expect(usuario.correo).to.eql(pm.collectionVariables.get(\"correo_actualizado\"));",
+                  "    pm.expect(usuario.telefono).to.eql(\"987654321\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "22 Mantener correo propio y omitir telefono",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/usuarios/{{usuario_a_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vecino Postman actualizado\",\n  \"correo\": \"{{correo_actualizado}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "const usuario = pm.response.json();",
+                  "pm.test(\"Correo propio permitido y telefono eliminado\", function () {",
+                  "    pm.expect(usuario.correo).to.eql(pm.collectionVariables.get(\"correo_actualizado\"));",
+                  "    pm.expect(usuario.telefono).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Limpieza",
+      "item": [
+        {
+          "name": "23 Eliminar usuario A creado en esta ejecucion",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/usuarios/{{usuario_a_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 204\", function () { pm.response.to.have.status(204); });",
+                  "pm.test(\"Respuesta vacia\", function () { pm.expect(pm.response.text()).to.eql(\"\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "24 Comprobar eliminacion de A",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/usuarios/{{usuario_a_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Usuario no encontrado\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "25 Eliminar A nuevamente",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/usuarios/{{usuario_a_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Formato uniforme de error\", function () {",
+                  "    pm.expect(error.estado).to.eql(pm.response.code);",
+                  "    pm.expect(error.mensaje).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(error.detalles).to.be.an(\"array\");",
+                  "});",
+                  "pm.test(\"Mensaje esperado\", function () { pm.expect(error.mensaje).to.eql(\"Usuario no encontrado\"); });",
+                  "pm.test(\"Sin detalles de validacion\", function () { pm.expect(error.detalles).to.eql([]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "26 Eliminar usuario B creado en esta ejecucion",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{base_url}}/usuarios/{{usuario_b_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 204\", function () { pm.response.to.have.status(204); });",
+                  "pm.test(\"Respuesta vacia\", function () { pm.expect(pm.response.text()).to.eql(\"\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "27 Comprobar limpieza en el listado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/usuarios"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "const usuarios = pm.response.json();",
+                  "pm.test(\"Los dos usuarios de prueba ya no aparecen\", function () {",
+                  "    pm.expect(usuarios).to.be.an(\"array\");",
+                  "    const ids = usuarios.map(function (usuario) { return String(usuario.id); });",
+                  "    pm.expect(ids).not.to.include(pm.collectionVariables.get(\"usuario_a_id\"));",
+                  "    pm.expect(ids).not.to.include(pm.collectionVariables.get(\"usuario_b_id\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
