@@ -45,12 +45,7 @@ public class UsuarioService {
     }
 
     public UsuarioResponse crear(UsuarioRequest datos) {
-        if (datos.getNombre() == null || datos.getNombre().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre es obligatorio");
-        }
-        if (datos.getCorreo() == null || datos.getCorreo().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El correo es obligatorio");
-        }
+        validarDatos(datos);
 
         Usuario usuario = new Usuario();
         usuario.setNombre(datos.getNombre().trim());
@@ -62,5 +57,36 @@ public class UsuarioService {
         Usuario guardado = repository.save(usuario);
         return new UsuarioResponse(guardado.getId(), guardado.getNombre(),
                 guardado.getCorreo(), guardado.getTelefono(), guardado.getRol());
+    }
+
+    public UsuarioResponse actualizar(Long id, UsuarioRequest datos) {
+        validarDatos(datos);
+
+        Optional<Usuario> resultado = repository.findById(id);
+        if (resultado.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+        }
+
+        Usuario usuario = resultado.get();
+        usuario.setNombre(datos.getNombre().trim());
+        usuario.setCorreo(datos.getCorreo().trim().toLowerCase(Locale.ROOT));
+        if (datos.getTelefono() == null) {
+            usuario.setTelefono(null);
+        } else {
+            usuario.setTelefono(datos.getTelefono().trim());
+        }
+
+        Usuario guardado = repository.save(usuario);
+        return new UsuarioResponse(guardado.getId(), guardado.getNombre(),
+                guardado.getCorreo(), guardado.getTelefono(), guardado.getRol());
+    }
+
+    private void validarDatos(UsuarioRequest datos) {
+        if (datos.getNombre() == null || datos.getNombre().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre es obligatorio");
+        }
+        if (datos.getCorreo() == null || datos.getCorreo().trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El correo es obligatorio");
+        }
     }
 }
