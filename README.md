@@ -5,7 +5,7 @@ Microservicio de usuarios de RutaLimpia, un sistema de recoleccion de reciclaje 
 ## Estado actual
 
 El proyecto base compila y genera un JAR con Java 21, Spring Boot 4.0.5 y Maven.
-Ya incluye JPA, PostgreSQL, validacion, conexion a usuarios_db, la entidad Usuario con sus roles, UsuarioRepository y los DTO de entrada y respuesta. Ya permite crear usuarios mediante POST /usuarios, guardarlos en PostgreSQL y listarlos mediante GET /usuarios.
+Ya incluye JPA, PostgreSQL, validacion, conexion a usuarios_db, la entidad Usuario con sus roles, UsuarioRepository y los DTO de entrada y respuesta. Ya permite crear usuarios mediante POST /usuarios, guardarlos en PostgreSQL, listarlos mediante GET /usuarios y consultarlos por ID mediante GET /usuarios/{id}.
 
 Este README define la propuesta de modelo y alcance que usaremos para desarrollar
 el servicio. Los campos y roles elegidos son decisiones de este proyecto;
@@ -62,7 +62,7 @@ que una persona se registre como administrador o conductor.
 
 ## Endpoints previstos para el CRUD
 
-Por ahora estan implementados POST /usuarios y GET /usuarios. Los otros endpoints siguen pendientes.
+Por ahora estan implementados POST /usuarios, GET /usuarios y GET /usuarios/{id}. Los otros endpoints siguen pendientes.
 
 | Metodo | Ruta | Funcion | Respuesta correcta |
 | --- | --- | --- | --- |
@@ -176,9 +176,13 @@ Devuelve `201 Created` con el ID generado, nombre, correo, telefono y rol `VECIN
 El telefono es opcional. El nombre se guarda sin espacios al principio o al final;
 el correo tambien se convierte a minusculas. Nombre o correo vacios devuelven 400.
 
-La creacion y el listado estan implementados. La validacion completa y las
+La creacion, el listado y la consulta por ID estan implementados. La validacion completa y las
 respuestas para correos duplicados se agregaran en sus etapas correspondientes.
 
 ## Listar usuarios
 
 En Postman, enviar GET a http://localhost:8080/usuarios. Devuelve 200 OK con una lista JSON de usuarios (id, nombre, correo, telefono y rol). Si no hay usuarios, devuelve una lista vacia: [].
+
+## Consultar un usuario por ID
+
+En Postman, enviar GET a http://localhost:8080/usuarios/{id}, reemplazando {id} por el ID real de un usuario creado. Devuelve 200 OK con el usuario o 404 Not Found si no existe.

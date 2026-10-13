@@ -7,6 +7,7 @@ import com.duoc.usuarios_ms.repository.UsuarioRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,6 +19,17 @@ public class UsuarioService {
 
     public UsuarioService(UsuarioRepository repository) {
         this.repository = repository;
+    }
+
+    public UsuarioResponse buscarPorId(Long id) {
+        Optional<Usuario> resultado = repository.findById(id);
+        if (resultado.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
+        }
+
+        Usuario usuario = resultado.get();
+        return new UsuarioResponse(usuario.getId(), usuario.getNombre(),
+                usuario.getCorreo(), usuario.getTelefono(), usuario.getRol());
     }
 
     public List<UsuarioResponse> listar() {
